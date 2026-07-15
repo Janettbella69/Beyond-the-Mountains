@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `personal-legend`（工作代号）是一个 **AI 驱动的互动叙事游戏**：少年寻找天命的旅程，沿途相遇由 AI 实时生成、每局不同，被一条手写的主线母题牵引。
 
-**当前阶段：设计定稿、§9 上游问题已拍板（2026-07-02），尚无代码。** 已定：世界观 = 东方架空·水墨山海（自创地名，不用《山海经》专名）；MVP = 档位 A"灵魂验证"（数字见 spec §6）+ **导师活 NPC Agent 必带**；表现层 = UE5.8（叙事引擎留 TS 后端）。设计文档是本项目的唯一事实来源（single source of truth）：
+**当前阶段：增量1 动工中（UE VN 壳）。** 已定：世界观 = 东方架空（自创地名：云岫山/问津门/溪尾村，不用《山海经》专名）；美术 = **光遇系氛围**（2026-07-15 改向，借氛围不抄设计、造型全原创，替代原水墨拍板，见 spec §9.1）；MVP = 档位 A"灵魂验证"（数字见 spec §6）+ **导师活 NPC Agent 必带**；表现层 = UE5.8（叙事引擎留 TS 后端）。设计文档是本项目的唯一事实来源（single source of truth）：
 
 - `docs/specs/2026-06-24-personal-legend-design.md`
 

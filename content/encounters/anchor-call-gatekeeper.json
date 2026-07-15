@@ -1,0 +1,91 @@
+{
+  "schema_version": "0.1",
+  "encounter": {
+    "id": "anchor_call_gatekeeper",
+    "type": "anchor",
+    "node": "call",
+    "pillar": "courage",
+    "location_name": "问津门",
+    "background": "BG_WenJinGate",
+    "characters": [
+      { "id": "gatekeeper", "name": "守门老人", "archetype": "mentor" },
+      { "id": "youth", "name": "少年", "archetype": "protagonist" }
+    ],
+    "notes": "楔子。恐惧/勇气支柱的手写锚点。铜铃(哑的)与'云海如未写字的纸'是镜子结局的回扣物：结局回到同一门前，纸已写满，铃会响。"
+  },
+  "beats": [
+    { "type": "title", "text": "楔子 · 问津门" },
+
+    { "type": "line", "speaker": "旁白", "text": "云岫山的雾，是从山脚往上长的。天不亮，它就漫过了溪尾村的屋脊。" },
+    { "type": "line", "speaker": "旁白", "text": "山道尽头立着一座旧石门。门外是翻涌的云海，像一张还没写字的纸。", "tags": ["mirror_anchor"] },
+    { "type": "line", "speaker": "旁白", "text": "少年在门前站定。他背着一只小包袱，里面是三块干饼，和一个说不清的梦。" },
+
+    { "type": "line", "speaker": "守门老人", "text": "这么早。雾都还没醒透。" },
+    { "type": "line", "speaker": "旁白", "text": "守门老人坐在门边的石墩上，手里一盏纸灯笼，火光在雾里晕开一圈暖黄。" },
+    { "type": "line", "speaker": "少年", "text": "阿公，我要出山。" },
+    { "type": "line", "speaker": "守门老人", "text": "哦。去哪儿？" },
+    { "type": "line", "speaker": "少年", "text": "我说不清。我总梦见同一个地方——墨色的大海尽头，有一座悬在雾里的青山，山里有钟声，像在喊我的名字。" },
+    { "type": "line", "speaker": "守门老人", "text": "梦而已。" },
+    { "type": "line", "speaker": "少年", "text": "可它来了三次。一模一样的三次。" },
+    { "type": "line", "speaker": "旁白", "text": "老人抬起眼皮，头一回正眼看他。灯笼的光轻轻晃了晃。" },
+    { "type": "line", "speaker": "守门老人", "text": "……包袱里装了什么？" },
+
+    { "type": "choice", "id": "c_pack", "prompt": "你答——",
+      "options": [
+        { "id": "a", "text": "「三块干饼，几枚铜钱。都是实在东西。」",
+          "belief_delta": 1, "value_tag": "courage.grounded",
+          "reaction": [
+            { "speaker": "守门老人", "text": "实在好。路上骗子多，实在的人摔得轻。" }
+          ]
+        },
+        { "id": "b", "text": "「其实……就装了那个梦。」",
+          "belief_delta": 2, "value_tag": "courage.dreambound",
+          "reaction": [
+            { "speaker": "守门老人", "text": "呵。装梦的包袱最轻，也最沉。" }
+          ]
+        }
+      ]
+    },
+
+    { "type": "line", "speaker": "守门老人", "text": "小子，我在这门边坐了四十年。" },
+    { "type": "line", "speaker": "守门老人", "text": "见过多少个像你这样的后生，揣着一团火出去。" },
+    { "type": "line", "speaker": "守门老人", "text": "跨出这道门的人，十个里头，九个走不到他们要去的地方。" },
+    { "type": "line", "speaker": "守门老人", "text": "有的折在半路，有的忘了要去哪，有的——再也没回来。" },
+    { "type": "line", "speaker": "旁白", "text": "雾从门洞里涌进来，凉的。少年的手心却在出汗。" },
+    { "type": "line", "speaker": "守门老人", "text": "现在，你还走么？" },
+
+    { "type": "choice", "id": "c_step", "prompt": "门外的云海翻了个身。你——",
+      "options": [
+        { "id": "a", "text": "「走。」（我怕。可我更怕一辈子不知道山外是什么。）",
+          "belief_delta": 2, "value_tag": "courage.forward",
+          "reaction": [
+            { "speaker": "守门老人", "text": "怕，还走？" },
+            { "speaker": "少年", "text": "嗯。怕，还走。" },
+            { "speaker": "守门老人", "text": "……那就是真的要走了。" }
+          ],
+          "insight": "原来「怕」和「走」，可以是同一件事。"
+        },
+        { "id": "b", "text": "「让我在门里，再站一夜。」",
+          "belief_delta": 0, "value_tag": "courage.deliberate",
+          "reaction": [
+            { "speaker": "守门老人", "text": "站吧。这门又不赶人。" },
+            { "speaker": "旁白", "text": "那一夜，少年守着门洞，看雾往山下退，像退潮。天亮时，他把包袱系紧了。" },
+            { "speaker": "少年", "text": "阿公，我走了。" }
+          ],
+          "insight": "有的门槛，要用一整夜跨过去——可一夜，也就够了。"
+        }
+      ]
+    },
+
+    { "type": "line", "speaker": "旁白", "text": "老人从怀里摸出一枚旧铜铃，塞进少年手里。铃舌早就没了，摇不响。", "tags": ["token.mutebell"] },
+    { "type": "line", "speaker": "守门老人", "text": "山里人的老话：铃不响的时候，就看天上的鹭。" },
+    { "type": "line", "speaker": "守门老人", "text": "往后拿不定主意，就找那只白鹭。它往哪儿飞，是个兆头。", "tags": ["omen.egret"] },
+    { "type": "line", "speaker": "少年", "text": "要是……我也走不到呢？" },
+    { "type": "line", "speaker": "守门老人", "text": "那你就回来。这门，我给你留着。" },
+    { "type": "line", "speaker": "旁白", "text": "少年跨过门槛。云海在脚下让开一条白亮的路，像有人提前替他走过一遍。" },
+    { "type": "insight", "text": "出发这件事，一旦做了，路就开始悄悄帮你。" },
+    { "type": "line", "speaker": "旁白", "text": "他没有回头。雾里，纸灯笼的光一直亮到看不见。", "tags": ["departure"] },
+
+    { "type": "end" }
+  ]
+}

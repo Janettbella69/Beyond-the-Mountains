@@ -76,54 +76,51 @@ def ensure_fn_graph(name):
 # ---------- 1) 节点类型发现 ----------
 def find_types(filter_s, graph=None):
     r, _ = call(BT, "find_node_types", {"graph": {"refPath": graph or event_graph},
-                                        "type_id_filter": filter_s})
+                                        "type_id_filter": filter_s, "context_pins": []})
     rv = r.get("returnValue", r)
-    ids = []
-    def pick(o):
-        if isinstance(o, dict):
-            for k, v in o.items():
-                if k == "type_id" and isinstance(v, str):
-                    ids.append(v)
-                else:
-                    pick(v)
-        elif isinstance(o, list):
-            for v in o:
-                pick(v)
-    pick(rv)
-    if not ids and isinstance(rv, str):
-        ids = [l.strip() for l in rv.splitlines() if "|" in l]
-    return ids
+    if isinstance(rv, list):
+        return [i for i in rv if isinstance(i, str)]
+    if isinstance(rv, str):
+        return [l.strip() for l in rv.splitlines() if "|" in l]
+    print(f"  [debug] find_node_types('{filter_s}') unexpected: {json.dumps(r, ensure_ascii=False)[:400]}")
+    return []
 
 
-def resolve(filter_s, *prefer, required=True):
-    ids = find_types(filter_s)
-    for p in prefer:
-        for i in ids:
-            if p.lower() in i.lower():
-                return i
-    if ids:
-        return ids[0]
+def resolve(filters, prefer, required=True):
+    """filters: 依次尝试的 type_id_filter；prefer: 依次匹配的子串偏好。"""
+    for f in filters:
+        ids = find_types(f)
+        for p in prefer:
+            for i in ids:
+                if p.lower() in i.lower():
+                    return i
+        if ids:
+            print(f"  (resolve '{f}' 无偏好命中，候选前5: {ids[:5]})")
     if required:
-        raise SystemExit(f"cannot resolve node type: {filter_s} (got {ids})")
+        raise SystemExit(f"cannot resolve node type: {filters} prefer {prefer}")
     return None
 
 
 NODE = {}
-NODE["arr_get"] = resolve("Array|Get", "Utilities|Array|Get")
-NODE["settext"] = resolve("SetText", "TextBlock|SetText")
-NODE["setvis"] = resolve("SetVisibility", "Widget|SetVisibility")
-NODE["strlen"] = resolve("Len", "String|Len")
-NODE["str2text"] = resolve("ToText", "String")
-NODE["int2text"] = resolve("Conv_IntToText", "Int", required=False) or resolve("ToText(int", "int")
+NODE["arr_get"] = resolve(["Get(a", "Utilities|Array"], ["Array|Get(acopy)"])
+NODE["settext"] = resolve(["SetText(Text)", "SetText"], ["SetText(Text)"])
+NODE["setvis"] = resolve(["SetVisibility"], ["Widget|SetVisibility", "|SetVisibility"])
+NODE["strlen"] = resolve(["String|Len", "Len"], ["String|Len"])
+NODE["str2text"] = resolve(["ToText"], ["ToText(String)", "String"])
+NODE["int2text"] = resolve(["ToText"], ["ToText(Integer)", "Integer", "Int"])
 print("resolved nodes:", json.dumps(NODE, indent=1))
-for k in NODE:
-    pins, _ = call(BT, "get_node_type_pins", {"graph": {"refPath": event_graph}, "type_id": NODE[k]})
-    print(f"  pins[{k}]:", json.dumps(pins)[:300])
 
 
 # ---------- 2) DSL 源 ----------
+# 控件绑定变量归类在蓝图名下（Variables|WBP_VN|GetX），自建数据变量在 Default 下
+WIDGET_VARS = {"BGImage", "SpeakerText", "BodyText", "ChoiceBox", "ChoiceBtnA", "ChoiceBtnB",
+               "ChoiceBtnC", "ChoiceTextA", "ChoiceTextB", "ChoiceTextC", "InsightPanel",
+               "InsightText", "TitleText", "DialogPanel", "BeliefValue", "AdvanceCatcher"}
+
+
 def gv(name):  # get variable
-    return f"(Variables|Default|Get{name})"
+    cat = "WBP_VN" if name in WIDGET_VARS else "Default"
+    return f"(Variables|{cat}|Get{name})"
 
 
 def sv(name, expr):  # set variable
@@ -174,15 +171,15 @@ SHOWROW = f"""
       (bind bt {arr('BText', 'i')})
       (if (> ({NODE['strlen']} bt) 0)
         {settext('ChoiceTextB', s2t('bt'))}
-        (Class|Widget|SetVisibility :self {gv('ChoiceBtnB')} :InVisibility "Visible")
+        {setvis('ChoiceBtnB', 'Visible')}
         (else
-          (Class|Widget|SetVisibility :self {gv('ChoiceBtnB')} :InVisibility "Collapsed")))
+          {setvis('ChoiceBtnB', 'Collapsed')}))
       (bind ct {arr('CText', 'i')})
       (if (> ({NODE['strlen']} ct) 0)
         {settext('ChoiceTextC', s2t('ct'))}
-        (Class|Widget|SetVisibility :self {gv('ChoiceBtnC')} :InVisibility "Visible")
+        {setvis('ChoiceBtnC', 'Visible')}
         (else
-          (Class|Widget|SetVisibility :self {gv('ChoiceBtnC')} :InVisibility "Collapsed")))
+          {setvis('ChoiceBtnC', 'Collapsed')}))
       {setvis('ChoiceBox', 'Visible')})
     (:3
       {setvis('DialogPanel', 'Collapsed')}
@@ -200,7 +197,7 @@ print("ShowRow write:", json.dumps(r)[:400])
 r, _ = call(BT, "compile_blueprint", {"blueprint": BP_REF})
 print("compile1:", json.dumps(r)[:400])
 
-callshow_id = resolve("ShowRow", "ShowRow")
+callshow_id = resolve(["ShowRow"], ["CallFunction|ShowRow", "ShowRow"])
 print("ShowRow call node:", callshow_id)
 CALLSHOW = f"({callshow_id} :self self)"
 
@@ -239,14 +236,21 @@ r, _ = call(BT, "compile_blueprint", {"blueprint": BP_REF})
 print("compile2:", json.dumps(r)[:400])
 
 # ---------- 4) Construct + 按钮绑定 ----------
-CONSTRUCT = f"""
-(event Construct
+construct_ok = False
+for ev_name in ("UserInterface|EventConstruct", "Construct", "EventConstruct"):
+    code = f"""
+(event {ev_name}
   {sv('Idx', '0')}
   {sv('Belief', '3')}
   {CALLSHOW})
 """
-r, err = call(BT, "write_graph_dsl", {"graph": {"refPath": event_graph}, "code": CONSTRUCT}, ok_fail=True)
-print("Construct write:", ("ERR " if err else "") + json.dumps(r)[:400])
+    r, err = call(BT, "write_graph_dsl", {"graph": {"refPath": event_graph}, "code": code}, ok_fail=True)
+    print(f"Construct as '{ev_name}':", ("ERR " if err else "ok ") + json.dumps(r)[:300])
+    if not err:
+        construct_ok = True
+        break
+if not construct_ok:
+    raise SystemExit("Construct event 两种名字都失败")
 
 bind_map = [("AdvanceCatcher", "Advance"), ("ChoiceBtnA", "PickA"),
             ("ChoiceBtnB", "PickB"), ("ChoiceBtnC", "PickC")]
@@ -256,7 +260,7 @@ for widget_var, fn in bind_map:
         "propertyName": widget_var,
         "propertyClass": {"refPath": "/Script/UMG.Button"}}, ok_fail=True)
     print(f"bind {widget_var}.OnClicked:", ("ERR " if err else "") + json.dumps(r)[:300])
-    fn_id = resolve(fn, fn)
+    fn_id = resolve([fn], ["CallFunction|" + fn, fn])
     code = f"(event OnClicked_{widget_var} ({fn_id} :self self))"
     r, err = call(BT, "write_graph_dsl", {"graph": {"refPath": event_graph}, "code": code}, ok_fail=True)
     print(f"  handler via DSL OnClicked_{widget_var}:", ("ERR " if err else "ok ") + json.dumps(r)[:250])
@@ -295,6 +299,6 @@ print("CDO set:", json.dumps(r)[:200])
 
 r, _ = call(BT, "compile_blueprint", {"blueprint": BP_REF})
 print("compile4:", json.dumps(r)[:300])
-r, _ = call(AT, "save_assets", {"assets": [BP_REF]})
+r, _ = call(AT, "save_assets", {"asset_paths": [WBP]})
 print("saved:", json.dumps(r)[:200])
 print("DONE logic")
